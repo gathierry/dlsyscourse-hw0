@@ -33,7 +33,7 @@ void softmax_regression_epoch_cpp(const float *X, const unsigned char *y,
      */
 
     // To get row i, col j: X[i * ncol + j]
-
+    float batch_float = static_cast<float>(batch);
     size_t start = 0;
     while (start + batch <= m) {
         // exp_logits = np.exp(X_batch @ theta)
@@ -76,7 +76,7 @@ void softmax_regression_epoch_cpp(const float *X, const unsigned char *y,
                     gradient[ni * k + ki] += 
                         X[start * n + bi * n + ni] 
                         * (Z[bi * k + ki] - I_y[bi * k + ki]) 
-                        / static_cast<float>(batch);
+                        / batch_float;
                 }
             }
         }

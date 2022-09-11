@@ -19,12 +19,10 @@ def add(x, y):
     Return:
         Sum of x + y
     """
-    ### BEGIN YOUR CODE
-    pass
-    ### END YOUR CODE
+    return x + y
 
 
-def parse_mnist(image_filesname, label_filename):
+def parse_mnist(image_filename, label_filename):
     """ Read an images and labels file in MNIST format.  See this page:
     http://yann.lecun.com/exdb/mnist/ for a description of the file format.
 
@@ -46,9 +44,14 @@ def parse_mnist(image_filesname, label_filename):
                 labels of the examples.  Values should be of type np.uint8 and
                 for MNIST will contain the values 0-9.
     """
-    ### BEGIN YOUR CODE
-    pass
-    ### END YOUR CODE
+    with gzip.open(image_filename) as fid:
+        # First 16 bytes are magic_number, n_imgs, n_rows, n_cols
+        X = np.frombuffer(fid.read(), 'B', offset=16)
+        X = X.reshape(-1, 784).astype('float32') / 255
+    with gzip.open(label_filename) as f:
+        # First 8 bytes are magic_number, n_labels
+        y = np.frombuffer(f.read(), 'B', offset=8)
+    return X, y
 
 
 def softmax_loss(Z, y):
@@ -66,9 +69,9 @@ def softmax_loss(Z, y):
     Returns:
         Average softmax loss over the sample.
     """
-    ### BEGIN YOUR CODE
-    pass
-    ### END YOUR CODE
+    return np.mean(
+        np.log(np.exp(Z).sum(axis=1)) - Z[np.arange(Z.shape[0]), y]
+    )
 
 
 def softmax_regression_epoch(X, y, theta, lr = 0.1, batch=100):
@@ -89,9 +92,19 @@ def softmax_regression_epoch(X, y, theta, lr = 0.1, batch=100):
     Returns:
         None
     """
-    ### BEGIN YOUR CODE
-    pass
-    ### END YOUR CODE
+    num_examples, _ = X.shape
+    start = 0
+    while start + batch <= num_examples:
+        X_batch = X[start:start + batch]
+        y_batch = y[start:start + batch]
+        
+        exp_logits = np.exp(X_batch @ theta)  # (B, K)
+        Z = exp_logits / np.sum(exp_logits, axis=1, keepdims=True)  # (B, K)
+        I_y = np.eye(theta.shape[1])[y_batch]  # (B, K)
+        # (C, B) * (B, K) -> (C, K)
+        gradient = X_batch.T @ (Z - I_y) / batch
+        theta -= lr * gradient
+        start += batch
 
 
 def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):

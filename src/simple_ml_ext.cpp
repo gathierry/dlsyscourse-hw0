@@ -32,9 +32,62 @@ void softmax_regression_epoch_cpp(const float *X, const unsigned char *y,
      *     (None)
      */
 
-    /// BEGIN YOUR CODE
+    // To get row i, col j: X[i * ncol + j]
 
-    /// END YOUR CODE
+    size_t start = 0;
+    while (start + batch <= m) {
+        // exp_logits = np.exp(X_batch @ theta)
+        // [b, n] * [n, k] -> [b, k]
+        float exp_logits[batch * k] = {};
+        for (size_t bi = 0; bi < batch; bi ++) {
+            for (size_t ki = 0; ki < k; ki ++) {
+                for (size_t ni = 0; ni < n; ni ++) {
+                    exp_logits[bi * k + ki] += 
+                        X[start * n + bi * n + ni] * theta[ni * k + ki];
+                }
+            }
+        }
+        for (size_t bi = 0; bi < batch; bi ++) {
+            for (size_t ki = 0; ki < k; ki ++) {
+                exp_logits[bi * k + ki] = exp(exp_logits[bi * k + ki]);
+            }
+        }
+        // Z = exp_logits / np.sum(exp_logits, axis=1, keepdims=True) -> [b, k]
+        float Z[batch * k] = {};
+        for (size_t bi = 0; bi < batch; bi ++) {
+            float exp_logits_sum = 0;
+            for (size_t ki = 0; ki < k; ki ++) {
+                exp_logits_sum += exp_logits[bi * k + ki];
+            }
+            for (size_t ki = 0; ki < k; ki ++) {
+                Z[bi * k + ki] = exp_logits[bi * k + ki] / exp_logits_sum;
+            }
+        }
+        // I_y = np.eye(theta.shape[1])[y_batch] -> [b, k]
+        float I_y[batch * k] = {};
+        for (size_t i = 0; i < batch; i ++) {
+            I_y[i * k + y[start + i]] = 1;
+        }
+        // gradient = X_batch.T @ (Z - I_y) / batch -> [n, k]
+        float gradient[n * k] = {};
+        for (size_t ni = 0; ni < n; ni ++) {
+            for (size_t ki = 0; ki < k; ki ++) {
+                for (size_t bi = 0; bi < batch; bi ++) {
+                    gradient[ni * k + ki] += 
+                        X[start * n + bi * n + ni] 
+                        * (Z[bi * k + ki] - I_y[bi * k + ki]) 
+                        / static_cast<float>(batch);
+                }
+            }
+        }
+        // theta -= lr * gradient -> [n, k]
+        for (size_t ni = 0; ni < n; ni ++) {
+            for (size_t ki = 0; ki < k; ki ++) {
+                theta[ni * k + ki] -= lr * gradient[ni * k + ki];
+            }
+        }
+        start += batch;
+    }
 }
 
 

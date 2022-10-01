@@ -129,9 +129,28 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
     Returns:
         None
     """
-    ### BEGIN YOUR CODE
-    pass
-    ### END YOUR CODE
+    num_examples, _ = X.shape
+    start = 0
+    while start + batch <= num_examples:
+        X_batch = X[start:start + batch]
+        y_batch = y[start:start + batch]
+
+        Z1 = np.maximum(X_batch @ W1, 0)  # (num_examples, hidden_dim)
+
+        exp_logits = np.exp(Z1 @ W2)  # (num_examples, num_classes)
+        exp_logits_norm = exp_logits / np.sum(exp_logits, axis=1, keepdims=True)  # (num_examples, num_classes)
+        Iy = np.eye(W2.shape[1])[y_batch]  # (num_examples, num_classes)
+        G2 = exp_logits_norm - Iy  # (num_examples, num_classes)
+
+        G1 = np.where(Z1 > 0, 1, 0) * (G2 @ W2.T)  # (num_examples, hidden_dim)
+
+        grad_w1 = X_batch.T @ G1 / batch
+        grad_w2 = Z1.T @ G2 / batch
+
+        W1 -= lr * grad_w1
+        W2 -= lr * grad_w2
+
+        start += batch
 
 
 
